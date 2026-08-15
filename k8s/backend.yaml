@@ -32,7 +32,7 @@ spec:
 
         - name: backend
 
-          image: FRONTEND_IMAGE
+          image: BACKEND_IMAGE
 
           imagePullPolicy: Always
 
