@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Kubernetes Demo</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f7fb;
+            margin: 0;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #2563eb;
+        }
+
+        button {
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>🚀 Kubernetes CI/CD Demo</h1>
+
+    <p>
+        Frontend is running inside Kubernetes.
+    </p>
+
+    <p>
+        Click the button to call the backend.
+    </p>
+
+    <button onclick="callBackend()">
+        Call Backend
+    </button>
+
+    <div id="result">
+        Waiting for backend...
+    </div>
+
+</div>
+
+<script>
+
+async function callBackend() {
+
+    const result = document.getElementById("result");
+
+    result.innerHTML = "Calling backend...";
+
+    try {
+
+        const response = await fetch("/api/hello");
+
+        if (!response.ok) {
+            throw new Error("Backend returned an error");
+        }
+
+        const data = await response.json();
+
+        result.innerHTML = `
+            <strong>Backend Response:</strong>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+        `;
+
+    } catch (error) {
+
+        result.innerHTML = `
+            <strong>Error:</strong>
+            ${error.message}
+        `;
+    }
+}
+
+</script>
+
+</body>
+</html>
