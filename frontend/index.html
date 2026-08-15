@@ -4,27 +4,130 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Kubernetes Demo</title>
+    <title>Kubernetes CI/CD Demo</title>
 
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: Arial, sans-serif;
-            background: #f4f7fb;
+            background: linear-gradient(135deg, #dbeafe, #f8fafc);
             margin: 0;
-            padding: 40px;
+            padding: 30px;
+            color: #1e293b;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: auto;
-            background: white;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
 
-        h1 {
+        .header {
+            background: linear-gradient(135deg, #2563eb, #1e40af);
+            color: white;
+            padding: 35px;
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(37, 99, 235, 0.25);
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            margin: 0 0 10px;
+            font-size: 32px;
+        }
+
+        .header p {
+            margin: 5px 0;
+            opacity: 0.9;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 14px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+        }
+
+        .card h2 {
+            margin-top: 0;
             color: #2563eb;
+        }
+
+        .time {
+            font-size: 38px;
+            font-weight: bold;
+            color: #0f172a;
+            margin: 15px 0 5px;
+        }
+
+        .date {
+            color: #64748b;
+            font-size: 16px;
+        }
+
+        .weather-main {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .weather-icon {
+            font-size: 65px;
+        }
+
+        .temperature {
+            font-size: 42px;
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        .weather-description {
+            color: #64748b;
+            margin-top: 5px;
+        }
+
+        .weather-details {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .weather-detail {
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .weather-detail strong {
+            display: block;
+            color: #334155;
+            margin-bottom: 5px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 7px 12px;
+            background: #dcfce7;
+            color: #166534;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .info {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
         }
 
         button {
@@ -32,12 +135,15 @@
             color: white;
             border: none;
             padding: 12px 20px;
-            border-radius: 6px;
+            border-radius: 8px;
             cursor: pointer;
+            font-size: 15px;
+            transition: 0.2s;
         }
 
         button:hover {
             background: #1d4ed8;
+            transform: translateY(-1px);
         }
 
         #result {
@@ -45,6 +151,40 @@
             padding: 20px;
             background: #f1f5f9;
             border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 25px;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .loading {
+            color: #64748b;
+        }
+
+        .error {
+            color: #dc2626;
+        }
+
+        @media (max-width: 700px) {
+            body {
+                padding: 15px;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 25px;
+            }
+
+            .time {
+                font-size: 30px;
+            }
         }
     </style>
 </head>
@@ -53,54 +193,434 @@
 
 <div class="container">
 
-    <h1>🚀 Kubernetes CI/CD Demo By Trainer JItesh</h1>
+    <!-- Header -->
+    <div class="header">
+        <h1>🚀 Kubernetes CI/CD Demo</h1>
 
-    <p>
-        Frontend is running inside Kubernetes.
-    </p>
+        <p>
+            Frontend is running inside Kubernetes.
+        </p>
 
-    <p>
-        Click the button to call the backend.
-    </p>
+        <p>
+            Automated deployment using Jenkins + Docker + AWS ECR + Kubernetes.
+        </p>
 
-    <button onclick="callBackend()">
-        Call Backend
-    </button>
+        <br>
 
-    <div id="result">
-        Waiting for backend...
+        <span class="status">
+            ● Kubernetes Application Running
+        </span>
+    </div>
+
+
+    <div class="grid">
+
+        <!-- Time Card -->
+        <div class="card">
+
+            <h2>🕐 Current Time</h2>
+
+            <div id="time" class="time">
+                Loading...
+            </div>
+
+            <div id="date" class="date">
+                Loading date...
+            </div>
+
+            <div class="info">
+                <strong>Timezone:</strong>
+                <span id="timezone">Loading...</span>
+            </div>
+
+        </div>
+
+
+        <!-- Weather Card -->
+        <div class="card">
+
+            <h2>🌤️ Weather</h2>
+
+            <div id="weather">
+
+                <div class="loading">
+                    Loading weather...
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- Kubernetes Card -->
+        <div class="card">
+
+            <h2>☸️ Kubernetes</h2>
+
+            <div class="info">
+                <strong>Platform</strong>
+                Kubernetes
+            </div>
+
+            <div class="info">
+                <strong>Namespace</strong>
+                demo
+            </div>
+
+            <div class="info">
+                <strong>Frontend</strong>
+                Running
+            </div>
+
+            <div class="info">
+                <strong>Backend</strong>
+                Running
+            </div>
+
+        </div>
+
+
+        <!-- CI/CD Card -->
+        <div class="card">
+
+            <h2>🔄 CI/CD Pipeline</h2>
+
+            <div class="info">
+                <strong>Source</strong>
+                GitHub
+            </div>
+
+            <div class="info">
+                <strong>Build</strong>
+                Jenkins
+            </div>
+
+            <div class="info">
+                <strong>Container Registry</strong>
+                AWS ECR
+            </div>
+
+            <div class="info">
+                <strong>Deployment</strong>
+                Kubernetes
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Backend Card -->
+    <div class="card" style="margin-top: 20px;">
+
+        <h2>🔗 Backend API</h2>
+
+        <p>
+            Click the button below to verify communication between
+            the Kubernetes frontend and backend.
+        </p>
+
+        <button onclick="callBackend()">
+            🚀 Call Backend
+        </button>
+
+        <div id="result">
+            Waiting for backend...
+        </div>
+
+    </div>
+
+
+    <div class="footer">
+        Kubernetes CI/CD Demo • Jenkins • Docker • AWS ECR • Kubernetes
     </div>
 
 </div>
 
+
 <script>
+
+/*
+ * ============================
+ * LIVE TIME
+ * ============================
+ */
+
+function updateTime() {
+
+    const now = new Date();
+
+    const time = now.toLocaleTimeString();
+
+    const date = now.toLocaleDateString(undefined, {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric"
+    });
+
+    document.getElementById("time").innerHTML = time;
+
+    document.getElementById("date").innerHTML = date;
+
+    document.getElementById("timezone").innerHTML =
+        Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+
+updateTime();
+
+setInterval(updateTime, 1000);
+
+
+/*
+ * ============================
+ * WEATHER
+ * ============================
+ */
+
+async function loadWeather(latitude, longitude) {
+
+    const weatherElement = document.getElementById("weather");
+
+    try {
+
+        const url =
+            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&timezone=auto`;
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error("Unable to load weather");
+        }
+
+        const data = await response.json();
+
+        const current = data.current;
+
+        const weatherInfo = getWeatherInfo(current.weather_code);
+
+        weatherElement.innerHTML = `
+
+            <div class="weather-main">
+
+                <div class="weather-icon">
+                    ${weatherInfo.icon}
+                </div>
+
+                <div>
+
+                    <div class="temperature">
+                        ${Math.round(current.temperature_2m)}°C
+                    </div>
+
+                    <div class="weather-description">
+                        ${weatherInfo.description}
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="weather-details">
+
+                <div class="weather-detail">
+                    <strong>🌡️ Feels Like</strong>
+                    ${Math.round(current.apparent_temperature)}°C
+                </div>
+
+                <div class="weather-detail">
+                    <strong>💧 Humidity</strong>
+                    ${current.relative_humidity_2m}%
+                </div>
+
+                <div class="weather-detail">
+                    <strong>💨 Wind</strong>
+                    ${current.wind_speed_10m} km/h
+                </div>
+
+                <div class="weather-detail">
+                    <strong>📍 Location</strong>
+                    Your Location
+                </div>
+
+            </div>
+        `;
+
+    } catch (error) {
+
+        weatherElement.innerHTML = `
+            <div class="error">
+                ❌ Unable to load weather.
+            </div>
+        `;
+
+        console.error(error);
+    }
+}
+
+
+/*
+ * Convert weather code to readable text
+ */
+
+function getWeatherInfo(code) {
+
+    if (code === 0) {
+        return {
+            icon: "☀️",
+            description: "Clear Sky"
+        };
+    }
+
+    if (code === 1 || code === 2) {
+        return {
+            icon: "🌤️",
+            description: "Partly Cloudy"
+        };
+    }
+
+    if (code === 3) {
+        return {
+            icon: "☁️",
+            description: "Cloudy"
+        };
+    }
+
+    if (code >= 45 && code <= 48) {
+        return {
+            icon: "🌫️",
+            description: "Foggy"
+        };
+    }
+
+    if (code >= 51 && code <= 67) {
+        return {
+            icon: "🌧️",
+            description: "Rain"
+        };
+    }
+
+    if (code >= 71 && code <= 77) {
+        return {
+            icon: "❄️",
+            description: "Snow"
+        };
+    }
+
+    if (code >= 80 && code <= 82) {
+        return {
+            icon: "🌦️",
+            description: "Rain Showers"
+        };
+    }
+
+    if (code >= 95) {
+        return {
+            icon: "⛈️",
+            description: "Thunderstorm"
+        };
+    }
+
+    return {
+        icon: "🌤️",
+        description: "Unknown"
+    };
+}
+
+
+/*
+ * Get user's location
+ */
+
+function getLocation() {
+
+    if (navigator.geolocation) {
+
+        navigator.geolocation.getCurrentPosition(
+
+            function(position) {
+
+                loadWeather(
+                    position.coords.latitude,
+                    position.coords.longitude
+                );
+
+            },
+
+            function() {
+
+                /*
+                 * Default location:
+                 * Delhi
+                 */
+
+                loadWeather(
+                    28.6139,
+                    77.2090
+                );
+
+            }
+        );
+
+    } else {
+
+        /*
+         * Default location:
+         * Delhi
+         */
+
+        loadWeather(
+            28.6139,
+            77.2090
+        );
+    }
+}
+
+getLocation();
+
+
+/*
+ * ============================
+ * BACKEND API
+ * ============================
+ */
 
 async function callBackend() {
 
     const result = document.getElementById("result");
 
-    result.innerHTML = "Calling backend...";
+    result.innerHTML = "⏳ Calling backend...";
 
     try {
 
         const response = await fetch("/api/hello");
 
         if (!response.ok) {
-            throw new Error("Backend returned an error");
+
+            throw new Error(
+                "Backend returned HTTP " + response.status
+            );
+
         }
 
         const data = await response.json();
 
         result.innerHTML = `
-            <strong>Backend Response:</strong>
+
+            <strong>✅ Backend Response:</strong>
+
             <pre>${JSON.stringify(data, null, 2)}</pre>
+
         `;
 
     } catch (error) {
 
         result.innerHTML = `
-            <strong>Error:</strong>
+
+            <strong>❌ Error:</strong>
+
             ${error.message}
+
         `;
     }
 }
