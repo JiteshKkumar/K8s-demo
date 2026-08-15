@@ -32,7 +32,7 @@ spec:
 
         - name: backend
 
-          image: 747855627478.dkr.ecr.ap-south-1.amazonaws.com/demo-backend:latest
+          image: FRONTEND_IMAGE
 
           imagePullPolicy: Always
 
