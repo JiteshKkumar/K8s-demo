@@ -6,7 +6,9 @@ pipeline {
 
         AWS_REGION = 'ap-south-1'
 
-        ECR_REGISTRY = '747855627478.dkr.ecr.ap-south-1.amazonaws.com'
+        AWS_ACCOUNT_ID = '747855627478'
+
+        ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
         FRONTEND_REPO = "${ECR_REGISTRY}/demo-frontend"
 
@@ -19,6 +21,10 @@ pipeline {
         EKS_CLUSTER = 'demo-eks'
 
         K8S_NAMESPACE = 'demo'
+    }
+
+    triggers {
+        githubPush()
     }
 
     stages {
@@ -39,6 +45,9 @@ pipeline {
                     aws --version
                     docker --version
                     kubectl version --client
+
+                    echo "AWS Account:"
+                    aws sts get-caller-identity
                 '''
             }
         }
@@ -48,10 +57,11 @@ pipeline {
                 sh '''
                     set -e
 
-                    echo "Building frontend..."
+                    echo "Building frontend image:"
+                    echo "${FRONTEND_IMAGE}"
 
                     docker build \
-                        -t ${FRONTEND_IMAGE} \
+                        -t "${FRONTEND_IMAGE}" \
                         ./frontend
                 '''
             }
@@ -62,10 +72,11 @@ pipeline {
                 sh '''
                     set -e
 
-                    echo "Building backend..."
+                    echo "Building backend image:"
+                    echo "${BACKEND_IMAGE}"
 
                     docker build \
-                        -t ${BACKEND_IMAGE} \
+                        -t "${BACKEND_IMAGE}" \
                         ./backend
                 '''
             }
@@ -79,11 +90,11 @@ pipeline {
                     echo "Logging into ECR..."
 
                     aws ecr get-login-password \
-                        --region ${AWS_REGION} \
+                        --region "${AWS_REGION}" \
                     | docker login \
                         --username AWS \
                         --password-stdin \
-                        ${ECR_REGISTRY}
+                        "${ECR_REGISTRY}"
                 '''
             }
         }
@@ -93,13 +104,11 @@ pipeline {
                 sh '''
                     set -e
 
-                    echo "Pushing frontend image..."
+                    echo "Pushing frontend..."
+                    docker push "${FRONTEND_IMAGE}"
 
-                    docker push ${FRONTEND_IMAGE}
-
-                    echo "Pushing backend image..."
-
-                    docker push ${BACKEND_IMAGE}
+                    echo "Pushing backend..."
+                    docker push "${BACKEND_IMAGE}"
                 '''
             }
         }
@@ -109,13 +118,11 @@ pipeline {
                 sh '''
                     set -e
 
-                    echo "Configuring kubectl..."
+                    echo "Configuring Kubernetes..."
 
                     aws eks update-kubeconfig \
-                        --region ${AWS_REGION} \
-                        --name ${EKS_CLUSTER}
-
-                    echo "Testing Kubernetes connection..."
+                        --region "${AWS_REGION}" \
+                        --name "${EKS_CLUSTER}"
 
                     kubectl cluster-info
                 '''
@@ -179,9 +186,11 @@ pipeline {
                 sh '''
                     set -e
 
+                    echo "Waiting for backend..."
+
                     kubectl rollout status \
                         deployment/backend \
-                        -n ${K8S_NAMESPACE} \
+                        -n "${K8S_NAMESPACE}" \
                         --timeout=180s
                 '''
             }
@@ -192,9 +201,11 @@ pipeline {
                 sh '''
                     set -e
 
+                    echo "Waiting for frontend..."
+
                     kubectl rollout status \
                         deployment/frontend \
-                        -n ${K8S_NAMESPACE} \
+                        -n "${K8S_NAMESPACE}" \
                         --timeout=180s
                 '''
             }
@@ -206,11 +217,19 @@ pipeline {
                     set -e
 
                     echo "===================="
+                    echo "DEPLOYMENT"
+                    echo "===================="
+
+                    kubectl get deployments \
+                        -n "${K8S_NAMESPACE}"
+
+                    echo ""
+                    echo "===================="
                     echo "PODS"
                     echo "===================="
 
                     kubectl get pods \
-                        -n ${K8S_NAMESPACE} \
+                        -n "${K8S_NAMESPACE}" \
                         -o wide
 
                     echo ""
@@ -219,7 +238,7 @@ pipeline {
                     echo "===================="
 
                     kubectl get services \
-                        -n ${K8S_NAMESPACE}
+                        -n "${K8S_NAMESPACE}"
 
                     echo ""
                     echo "===================="
@@ -227,7 +246,7 @@ pipeline {
                     echo "===================="
 
                     kubectl get ingress \
-                        -n ${K8S_NAMESPACE}
+                        -n "${K8S_NAMESPACE}"
                 '''
             }
         }
@@ -236,11 +255,16 @@ pipeline {
     post {
 
         success {
+            echo '========================================='
             echo 'Deployment completed successfully!'
+            echo "Build: ${BUILD_NUMBER}"
+            echo "Frontend: ${FRONTEND_IMAGE}"
+            echo "Backend: ${BACKEND_IMAGE}"
+            echo '========================================='
         }
 
         failure {
-            echo 'Deployment failed. Check the Jenkins console output.'
+            echo 'Deployment failed. Check Jenkins console output.'
         }
 
         always {
