@@ -6,12 +6,7 @@ pipeline {
 
         AWS_REGION = 'ap-south-1'
 
-        AWS_ACCOUNT_ID = sh(
-            script: "aws sts get-caller-identity --query Account --output text",
-            returnStdout: true
-        ).trim()
-
-        ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.ap-south-1.amazonaws.com"
+        ECR_REGISTRY = '747855627478.dkr.ecr.ap-south-1.amazonaws.com'
 
         FRONTEND_REPO = "${ECR_REGISTRY}/demo-frontend"
 
@@ -29,17 +24,27 @@ pipeline {
     stages {
 
         stage('Checkout') {
-
             steps {
-
                 checkout scm
             }
         }
 
-        stage('Build Frontend') {
-
+        stage('Verify Tools') {
             steps {
+                sh '''
+                    set -e
 
+                    echo "Checking tools..."
+
+                    aws --version
+                    docker --version
+                    kubectl version --client
+                '''
+            }
+        }
+
+        stage('Build Frontend') {
+            steps {
                 sh '''
                     set -e
 
@@ -53,9 +58,7 @@ pipeline {
         }
 
         stage('Build Backend') {
-
             steps {
-
                 sh '''
                     set -e
 
@@ -69,9 +72,7 @@ pipeline {
         }
 
         stage('Login to ECR') {
-
             steps {
-
                 sh '''
                     set -e
 
@@ -88,17 +89,15 @@ pipeline {
         }
 
         stage('Push Images') {
-
             steps {
-
                 sh '''
                     set -e
 
-                    echo "Pushing frontend..."
+                    echo "Pushing frontend image..."
 
                     docker push ${FRONTEND_IMAGE}
 
-                    echo "Pushing backend..."
+                    echo "Pushing backend image..."
 
                     docker push ${BACKEND_IMAGE}
                 '''
@@ -106,9 +105,7 @@ pipeline {
         }
 
         stage('Configure Kubernetes') {
-
             steps {
-
                 sh '''
                     set -e
 
@@ -118,15 +115,15 @@ pipeline {
                         --region ${AWS_REGION} \
                         --name ${EKS_CLUSTER}
 
+                    echo "Testing Kubernetes connection..."
+
                     kubectl cluster-info
                 '''
             }
         }
 
         stage('Deploy Namespace') {
-
             steps {
-
                 sh '''
                     set -e
 
@@ -137,39 +134,39 @@ pipeline {
         }
 
         stage('Deploy Backend') {
-
             steps {
-
                 sh '''
                     set -e
 
+                    echo "Deploying backend..."
+
                     sed "s|BACKEND_IMAGE|${BACKEND_IMAGE}|g" \
                         k8s/backend.yaml \
-                        | kubectl apply -f -
+                    | kubectl apply -f -
                 '''
             }
         }
 
         stage('Deploy Frontend') {
-
             steps {
-
                 sh '''
                     set -e
 
+                    echo "Deploying frontend..."
+
                     sed "s|FRONTEND_IMAGE|${FRONTEND_IMAGE}|g" \
                         k8s/frontend.yaml \
-                        | kubectl apply -f -
+                    | kubectl apply -f -
                 '''
             }
         }
 
         stage('Deploy Ingress') {
-
             steps {
-
                 sh '''
                     set -e
+
+                    echo "Deploying ingress..."
 
                     kubectl apply \
                         -f k8s/ingress.yaml
@@ -178,9 +175,7 @@ pipeline {
         }
 
         stage('Wait for Backend') {
-
             steps {
-
                 sh '''
                     set -e
 
@@ -193,9 +188,7 @@ pipeline {
         }
 
         stage('Wait for Frontend') {
-
             steps {
-
                 sh '''
                     set -e
 
@@ -208,24 +201,33 @@ pipeline {
         }
 
         stage('Verify') {
-
             steps {
-
                 sh '''
                     set -e
 
-                    echo "Pods:"
-                    kubectl get pods -n ${K8S_NAMESPACE}
+                    echo "===================="
+                    echo "PODS"
+                    echo "===================="
+
+                    kubectl get pods \
+                        -n ${K8S_NAMESPACE} \
+                        -o wide
 
                     echo ""
+                    echo "===================="
+                    echo "SERVICES"
+                    echo "===================="
 
-                    echo "Services:"
-                    kubectl get services -n ${K8S_NAMESPACE}
+                    kubectl get services \
+                        -n ${K8S_NAMESPACE}
 
                     echo ""
+                    echo "===================="
+                    echo "INGRESS"
+                    echo "===================="
 
-                    echo "Ingress:"
-                    kubectl get ingress -n ${K8S_NAMESPACE}
+                    kubectl get ingress \
+                        -n ${K8S_NAMESPACE}
                 '''
             }
         }
@@ -234,17 +236,14 @@ pipeline {
     post {
 
         success {
-
             echo 'Deployment completed successfully!'
         }
 
         failure {
-
             echo 'Deployment failed. Check the Jenkins console output.'
         }
 
         always {
-
             sh '''
                 docker image prune -f || true
             '''
