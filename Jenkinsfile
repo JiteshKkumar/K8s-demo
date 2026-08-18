@@ -10,14 +10,15 @@ pipeline {
 
         AWS_REGION = 'ap-south-1'
         AWS_ACCOUNT_ID = '747855627478'
+
         EKS_CLUSTER_NAME = 'demo-eks'
+
+        NAMESPACE = 'demo'
 
         ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
         FRONTEND_REPOSITORY = "${ECR_REGISTRY}/demo-frontend"
         BACKEND_REPOSITORY = "${ECR_REGISTRY}/demo-backend"
-
-        NAMESPACE = 'demo'
 
         FRONTEND_IMAGE = "${FRONTEND_REPOSITORY}:${BUILD_NUMBER}"
         BACKEND_IMAGE = "${BACKEND_REPOSITORY}:${BUILD_NUMBER}"
@@ -28,14 +29,13 @@ pipeline {
     stages {
 
         /*
-         * =========================================================
+         * =========================================
          * CHECKOUT
-         * =========================================================
+         * =========================================
          */
 
         stage('Checkout') {
             steps {
-
                 echo 'Checking out source code...'
 
                 checkout scm
@@ -63,20 +63,18 @@ pipeline {
 
 
         /*
-         * =========================================================
+         * =========================================
          * BUILD INFORMATION
-         * =========================================================
+         * =========================================
          */
 
         stage('Show Build Information') {
             steps {
-
                 echo '========================================='
                 echo "Build Number: ${BUILD_NUMBER}"
                 echo "Frontend Image: ${FRONTEND_IMAGE}"
                 echo "Backend Image: ${BACKEND_IMAGE}"
                 echo "EKS Cluster: ${EKS_CLUSTER_NAME}"
-                echo "AWS Region: ${AWS_REGION}"
                 echo "Namespace: ${NAMESPACE}"
                 echo '========================================='
             }
@@ -84,14 +82,13 @@ pipeline {
 
 
         /*
-         * =========================================================
-         * AWS / EKS CONNECTION
-         * =========================================================
+         * =========================================
+         * CONFIGURE EKS
+         * =========================================
          */
 
-        stage('Configure AWS and EKS') {
+        stage('Configure AWS / EKS') {
             steps {
-
                 sh '''
                     set -e
 
@@ -129,33 +126,25 @@ pipeline {
                     kubectl config current-context
 
                     echo ""
-                    echo "Kubernetes cluster information:"
-
-                    kubectl cluster-info
-
-                    echo ""
-                    echo "Testing Kubernetes API..."
+                    echo "Testing Kubernetes authentication..."
 
                     kubectl get nodes
 
                     echo ""
-                    echo "========================================="
-                    echo "EKS CONNECTION SUCCESSFUL"
-                    echo "========================================="
+                    echo "Kubernetes authentication successful."
                 '''
             }
         }
 
 
         /*
-         * =========================================================
+         * =========================================
          * BUILD FRONTEND
-         * =========================================================
+         * =========================================
          */
 
         stage('Build Frontend Docker Image') {
             steps {
-
                 sh '''
                     set -e
 
@@ -171,14 +160,13 @@ pipeline {
 
 
         /*
-         * =========================================================
+         * =========================================
          * BUILD BACKEND
-         * =========================================================
+         * =========================================
          */
 
         stage('Build Backend Docker Image') {
             steps {
-
                 sh '''
                     set -e
 
@@ -194,14 +182,13 @@ pipeline {
 
 
         /*
-         * =========================================================
-         * ECR LOGIN
-         * =========================================================
+         * =========================================
+         * LOGIN ECR
+         * =========================================
          */
 
         stage('Login to AWS ECR') {
             steps {
-
                 sh '''
                     set -e
 
@@ -218,14 +205,13 @@ pipeline {
 
 
         /*
-         * =========================================================
+         * =========================================
          * PUSH FRONTEND
-         * =========================================================
+         * =========================================
          */
 
         stage('Push Frontend Image') {
             steps {
-
                 sh '''
                     set -e
 
@@ -238,14 +224,13 @@ pipeline {
 
 
         /*
-         * =========================================================
+         * =========================================
          * PUSH BACKEND
-         * =========================================================
+         * =========================================
          */
 
         stage('Push Backend Image') {
             steps {
-
                 sh '''
                     set -e
 
@@ -258,71 +243,46 @@ pipeline {
 
 
         /*
-         * =========================================================
-         * VERIFY EKS CONNECTION AGAIN
-         * =========================================================
+         * =========================================
+         * VERIFY KUBERNETES
+         * =========================================
          */
 
-        stage('Verify Kubernetes Connection') {
+        stage('Verify Kubernetes Access') {
             steps {
-
                 sh '''
                     set -e
 
                     echo "========================================="
-                    echo "VERIFYING KUBERNETES"
+                    echo "VERIFYING KUBERNETES ACCESS"
                     echo "========================================="
 
-                    echo "Kubeconfig:"
-                    echo "${KUBECONFIG}"
-
-                    echo ""
-                    echo "Current context:"
-                    kubectl config current-context
-
-                    echo ""
-                    echo "API server:"
-                    kubectl config view \
-                        --minify \
-                        -o jsonpath='{.clusters[0].cluster.server}'
-
-                    echo ""
-
-                    echo ""
-                    echo "Cluster:"
                     kubectl cluster-info
 
                     echo ""
-                    echo "Nodes:"
-                    kubectl get nodes -o wide
+                    kubectl get nodes
 
                     echo ""
-                    echo "Namespaces:"
                     kubectl get namespaces
-
-                    echo ""
-                    echo "========================================="
                 '''
             }
         }
 
 
         /*
-         * =========================================================
+         * =========================================
          * DEPLOY NAMESPACE
-         * =========================================================
+         * =========================================
          */
 
         stage('Deploy Namespace') {
             steps {
-
                 sh '''
                     set -e
 
                     echo "Creating namespace..."
 
                     kubectl apply \
-                        --validate=false \
                         -f k8s/namespace.yaml
                 '''
             }
@@ -330,14 +290,13 @@ pipeline {
 
 
         /*
-         * =========================================================
+         * =========================================
          * DEPLOY BACKEND
-         * =========================================================
+         * =========================================
          */
 
         stage('Deploy Backend') {
             steps {
-
                 sh '''
                     set -e
 
@@ -345,23 +304,20 @@ pipeline {
 
                     sed "s|BACKEND_IMAGE|${BACKEND_IMAGE}|g" \
                         k8s/backend.yaml | \
-                    kubectl apply \
-                        --validate=false \
-                        -f -
+                        kubectl apply -f -
                 '''
             }
         }
 
 
         /*
-         * =========================================================
+         * =========================================
          * DEPLOY FRONTEND
-         * =========================================================
+         * =========================================
          */
 
         stage('Deploy Frontend') {
             steps {
-
                 sh '''
                     set -e
 
@@ -369,30 +325,26 @@ pipeline {
 
                     sed "s|FRONTEND_IMAGE|${FRONTEND_IMAGE}|g" \
                         k8s/frontend.yaml | \
-                    kubectl apply \
-                        --validate=false \
-                        -f -
+                        kubectl apply -f -
                 '''
             }
         }
 
 
         /*
-         * =========================================================
+         * =========================================
          * DEPLOY INGRESS
-         * =========================================================
+         * =========================================
          */
 
         stage('Deploy Ingress') {
             steps {
-
                 sh '''
                     set -e
 
                     echo "Deploying ingress..."
 
                     kubectl apply \
-                        --validate=false \
                         -f k8s/ingress.yaml
                 '''
             }
@@ -400,14 +352,13 @@ pipeline {
 
 
         /*
-         * =========================================================
+         * =========================================
          * WAIT BACKEND
-         * =========================================================
+         * =========================================
          */
 
         stage('Wait for Backend') {
             steps {
-
                 sh '''
                     set -e
 
@@ -423,14 +374,13 @@ pipeline {
 
 
         /*
-         * =========================================================
+         * =========================================
          * WAIT FRONTEND
-         * =========================================================
+         * =========================================
          */
 
         stage('Wait for Frontend') {
             steps {
-
                 sh '''
                     set -e
 
@@ -446,54 +396,44 @@ pipeline {
 
 
         /*
-         * =========================================================
+         * =========================================
          * VERIFY DEPLOYMENT
-         * =========================================================
+         * =========================================
          */
 
         stage('Verify Deployment') {
             steps {
-
                 sh '''
                     set -e
 
                     echo ""
                     echo "========================================="
-                    echo "DEPLOYMENT VERIFICATION"
+                    echo "DEPLOYMENT STATUS"
                     echo "========================================="
 
                     echo ""
                     echo "DEPLOYMENTS"
-                    echo "========================================="
-
                     kubectl get deployments \
                         -n "${NAMESPACE}"
 
                     echo ""
                     echo "PODS"
-                    echo "========================================="
-
                     kubectl get pods \
                         -n "${NAMESPACE}" \
                         -o wide
 
                     echo ""
                     echo "SERVICES"
-                    echo "========================================="
-
                     kubectl get services \
                         -n "${NAMESPACE}"
 
                     echo ""
                     echo "INGRESS"
-                    echo "========================================="
-
                     kubectl get ingress \
                         -n "${NAMESPACE}"
 
                     echo ""
                     echo "RUNNING IMAGES"
-                    echo "========================================="
 
                     kubectl get deployments \
                         frontend backend \
@@ -511,15 +451,14 @@ pipeline {
 
 
     /*
-     * =============================================================
-     * POST ACTIONS
-     * =============================================================
+     * =========================================
+     * POST
+     * =========================================
      */
 
     post {
 
         success {
-
             echo '''
 =========================================
 DEPLOYMENT COMPLETED SUCCESSFULLY
@@ -534,7 +473,6 @@ DEPLOYMENT COMPLETED SUCCESSFULLY
         }
 
         failure {
-
             echo '''
 =========================================
 DEPLOYMENT FAILED
@@ -543,14 +481,10 @@ DEPLOYMENT FAILED
 
             echo "Build: ${BUILD_NUMBER}"
             echo "Cluster: ${EKS_CLUSTER_NAME}"
-            echo "Namespace: ${NAMESPACE}"
         }
 
         always {
-
             sh '''
-                echo "Cleaning Docker images..."
-
                 docker image prune -f || true
             '''
         }
