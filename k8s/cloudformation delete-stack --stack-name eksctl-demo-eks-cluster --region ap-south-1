@@ -1,0 +1,36 @@
+[
+    {
+        "StackId": "arn:aws:cloudformation:ap-south-1:747855627478:stack/eksctl-demo-eks-cluster/cbc0e900-98c6-11f1-bb0d-02d84e98307b",
+        "StackName": "eksctl-demo-eks-cluster",
+        "TemplateDescription": "EKS cluster (dedicated VPC: true, dedicated IAM: true) [created and managed by eksctl]",
+        "CreationTime": "2026-08-15T16:31:41.495000+00:00",
+        "DeletionTime": "2026-08-18T03:18:02.128000+00:00",
+        "StackStatus": "DELETE_IN_PROGRESS",
+        "DriftInformation": {
+            "StackDriftStatus": "NOT_CHECKED"
+        },
+        "LastOperations": [
+            {
+                "OperationType": "DELETE_STACK",
+                "OperationId": "cc1bad3e-0fd9-47cd-b42e-fc75c20d94b8"
+            }
+        ]
+    },
+    {
+        "StackId": "arn:aws:cloudformation:ap-south-1:747855627478:stack/eksctl-demo-eks-cluster/8703dcb0-9857-11f1-828a-020b45c84a9b",
+        "StackName": "eksctl-demo-eks-cluster",
+        "TemplateDescription": "EKS cluster (dedicated VPC: true, dedicated IAM: true) [created and managed by eksctl]",
+        "CreationTime": "2026-08-15T03:15:12.032000+00:00",
+        "DeletionTime": "2026-08-15T16:15:57.527000+00:00",
+        "StackStatus": "DELETE_COMPLETE",
+        "DriftInformation": {
+            "StackDriftStatus": "NOT_CHECKED"
+        },
+        "LastOperations": [
+            {
+                "OperationType": "DELETE_STACK",
+                "OperationId": "83df2947-34ee-494f-abd7-7f9b693bd965"
+            }
+        ]
+    }
+]
